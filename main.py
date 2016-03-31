@@ -28,7 +28,6 @@ with open ('LIWC2007_English.dic', 'r') as f:
 		elif cont == True:
 			l = line.split()
 			for i in l:
-				print (i)
 				if (i == posemo_key):
 					posemo[l[0]] = 1
 				if (i == negemo_key):
