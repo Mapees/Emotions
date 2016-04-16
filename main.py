@@ -213,3 +213,20 @@ for line in train:
     train_liwc_emo_norm.append(vector_norm)
 
 
+
+# ------------------------------
+#     ENTRENAMIENTO
+# ------------------------------
+# Perform classification with SVM, kernel=rbf
+classifier_rbf = svm.SVC()
+t0 = time.time()
+classifier_rbf.fit(train_liwc_norm, train_labels)
+t1 = time.time()
+prediction_rbf = classifier_rbf.predict(test_liwc_norm)
+t2 = time.time()
+time_rbf_train = t1-t0
+time_rbf_predict = t2-t1
+
+print("Results for SVC(kernel=rbf)")
+print("Training time: %fs; Prediction time: %fs" % (time_rbf_train, time_rbf_predict))
+print(classification_report(test_labels, prediction_rbf))
