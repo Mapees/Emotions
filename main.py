@@ -1,8 +1,11 @@
 #Librerias
-import nltk
 from nltk.tokenize import TweetTokenizer
 tok = TweetTokenizer()
 import re
+
+from sklearn import svm
+from sklearn.metrics import classification_report
+import time
 
 # ------------------------------
 #        LEER   TRAIN
@@ -73,8 +76,9 @@ with open ('LIWC2007_English.dic', 'r') as f:
 
 
 #Tokenizar y obtener el resultado de cada tweet
-corpus_liwc=[]		# vector sin normalizar
-corpus_liwc_norm=[]	# vector normalizado
+train_liwc=[]		# vector sin normalizar
+train_liwc_norm=[]	# vector normalizado
+train_labels=[]
 
 for line in train:
 	token = tok.tokenize(line)
@@ -89,9 +93,31 @@ for line in train:
 			negativo = negativo+ negemo[i]
 	vector_tmp.extend([positivo, negativo])
 	vector_norm.extend([positivo / len(token), negativo / len(token)])
-	corpus_liwc.append( (vector_tmp, line))
-	corpus_liwc_norm.append( (vector_norm, line) )
+	train_liwc.append(vector_tmp)
+	train_liwc_norm.append(vector_norm)
+	train_labels.append(line)
 
+test_liwc=[]
+test_liwc_norm=[]
+test_labels=[]
+
+for line in test:
+	token = tok.tokenize(line)
+	positivo = 0
+	negativo = 0
+	vector_tmp = []
+	vector_norm = []
+	for i in token:
+		if (i in liwc_posemo):
+			positivo = positivo + liwc_posemo[i]
+		elif (i in liwc_negemo):
+			negativo = negativo + liwc_negemo[i]
+	vector_tmp.extend([positivo, negativo])
+	vector_norm.extend([positivo / len(token), negativo / len(token)])
+	test_liwc.append(vector_tmp)
+	test_liwc_norm.append(vector_norm)
+	test_labels.append(line)
+	
 # ------------------------------
 #            EMOLEX
 # ------------------------------
@@ -153,3 +179,37 @@ for line in train:
     vector_norm.extend([positivo / len(token), negativo / len(token)])
     train_emolex.append(vector_tmp)
     train_emolex_norm.append(vector_norm)
+
+# ------------------------------
+#     LIWC    +       EMOLEX
+# ------------------------------
+# Tokenizar y obtener resultado de cada tweet
+train_liwc_emo = []          # vector sin normalizar
+train_liwc_emo_norm = []     # vector normalizado
+
+
+for line in train:
+    token = tok.tokenize(line)
+    positivo_liwc = 0
+    negativo_liwc = 0
+    positivo_emo = 0
+    negativo_emo = 0
+    vector_tmp = []
+    vector_norm = []
+    for i in token:
+        # LIWC
+        if (i in liwc_posemo):
+                positivo_liwc = positivo_liwc + liwc_posemo[i]
+        elif (i in liwc_negemo):
+                negativo_liwc = negativo_liwc + liwc_negemo[i]
+        # EMOLEX
+        if (i in dic_emo_positive):
+            positivo_emo = positivo_emo + dic_emo_positive[i]
+        elif (i in dic_emo_negative):
+            negativo_emo = negativo_emo + dic_emo_negative[i]
+    vector_tmp.extend([positivo_liwc, negativo_liwc, positivo_emo, negativo_emo])
+    vector_norm.extend([positivo_liwc / len(token), negativo_liwc / len(token), positivo_emo / len(token), negativo_emo / len(token)])
+    train_liwc_emo.append(vector_tmp)
+    train_liwc_emo_norm.append(vector_norm)
+
+
