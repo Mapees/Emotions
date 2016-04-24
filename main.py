@@ -267,39 +267,133 @@ for line in test:
     test_emolex_norm.append(vector_temp_norm)
 
 
-# # ------------------------------
-# #     LIWC    +       EMOLEX
-# # ------------------------------
-# # Tokenizar y obtener resultado de cada tweet
-# train_liwc_emo = []          # vector sin normalizar
-# train_liwc_emo_norm = []     # vector normalizado
-#
-#
-# for line in train:
-#     token = tok.tokenize(line)
-#     positivo_liwc = 0
-#     negativo_liwc = 0
-#     positivo_emo = 0
-#     negativo_emo = 0
-#     vector_tmp = []
-#     vector_norm = []
-#     for i in token:
-#         # LIWC
-#         if (i in liwc_posemo):
-#                 positivo_liwc = positivo_liwc + liwc_posemo[i]
-#         elif (i in liwc_negemo):
-#                 negativo_liwc = negativo_liwc + liwc_negemo[i]
-#         # EMOLEX
-#         if (i in dic_emo_positive):
-#             positivo_emo = positivo_emo + dic_emo_positive[i]
-#         elif (i in dic_emo_negative):
-#             negativo_emo = negativo_emo + dic_emo_negative[i]
-#     vector_tmp.extend([positivo_liwc, negativo_liwc, positivo_emo, negativo_emo])
-#     vector_norm.extend([positivo_liwc / len(token), negativo_liwc / len(token), positivo_emo / len(token), negativo_emo / len(token)])
-#     train_liwc_emo.append(vector_tmp)        print(sentence)
+# ------------------------------
+#     LIWC    +       EMOLEX
+# ------------------------------
+# Tokenizar y obtener resultado de cada tweet
+train_liwc_emo_pn = []          # vector sin normalizar
+train_liwc_emo_pn_norm = []     # vector normalizado
+train_liwc_emo = []          # vector sin normalizar
+train_liwc_emo_norm = []     # vector normalizado
+count_train_liwc_emolex = {}           # vector con todas las categorias de liwc y emolex
 
-#     train_liwc_emo_norm.append(vector_norm)
-#
+for cat in count_train_liwc:
+    count_train_liwc_emolex[cat] = 0
+for cat in count_train_emolex:
+    count_train_liwc_emolex[cat] = 0
+
+for line in train:
+    token = tok.tokenize(line)
+    positivo_liwc = 0
+    negativo_liwc = 0
+    positivo_emo = 0
+    negativo_emo = 0
+    vector_tmp = []
+    vector_norm = []
+    posemo = dic_liwc['posemo']
+    negemo = dic_liwc['negemo']
+    positive = dic_emolex['positive']
+    negative = dic_emolex['negative']
+    for i in token:
+        # LIWC
+        if (i in posemo):
+                positivo_liwc = positivo_liwc + posemo[i]
+        elif (i in negemo):
+                negativo_liwc = negativo_liwc + negemo[i]
+        # EMOLEX
+        if (i in positive):
+            positivo_emo = positivo_emo + positive[i]
+        elif (i in negative):
+            negativo_emo = negativo_emo + negative[i]
+    vector_tmp.extend([positivo_liwc, negativo_liwc, positivo_emo, negativo_emo])
+    vector_norm.extend([positivo_liwc / len(token), negativo_liwc / len(token), positivo_emo / len(token), negativo_emo / len(token)])
+    train_liwc_emo_pn.append(vector_tmp)
+    train_liwc_emo_pn_norm.append(vector_norm)
+    
+    count_tmp = count_train_liwc_emolex.copy()
+    for i in token:
+        palabra = i.lower()
+        for categoria in dic_liwc:
+            dic_aux = dic_liwc[categoria]        
+            if (palabra in dic_aux):
+                valor = count_tmp[categoria]
+                valor = valor + dic_aux[palabra]
+                count_tmp[categoria] = valor
+
+    for i in token:
+        palabra = i.lower()
+        for categoria in dic_emolex:
+            dic_aux = dic_emolex[categoria]        
+            if (palabra in dic_aux):
+                valor = count_tmp[categoria]
+                valor = valor + dic_aux[palabra]
+                count_tmp[categoria] = valor      
+    vector=[]
+    vector_temp_norm = []
+    for key in count_tmp:
+        vector.append(count_tmp[key])
+        vector_temp_norm.append(count_tmp[key]/ len(token))
+    train_liwc_emo.append(vector)
+    train_liwc_emo_norm.append(vector_temp_norm)   
+
+test_liwc_emo_pn = []
+test_liwc_emo_pn_norm = []
+test_liwc_emolex = []
+test_liwc_emolex_norm = []
+
+for line in test:
+    token = tok.tokenize(line)
+    positivo_liwc = 0
+    negativo_liwc = 0
+    positivo_emo = 0
+    negativo_emo = 0
+    vector_tmp = []
+    vector_norm = []
+    posemo = dic_liwc['posemo']
+    negemo = dic_liwc['negemo']
+    positive = dic_emolex['positive']
+    negative = dic_emolex['negative']
+    for i in token:
+        # LIWC
+        if (i in posemo):
+                positivo_liwc = positivo_liwc + posemo[i]
+        elif (i in negemo):
+                negativo_liwc = negativo_liwc + negemo[i]
+        # EMOLEX
+        if (i in positive):
+            positivo_emo = positivo_emo + positive[i]
+        elif (i in negative):
+            negativo_emo = negativo_emo + negative[i]
+    vector_tmp.extend([positivo_liwc, negativo_liwc, positivo_emo, negativo_emo])
+    vector_norm.extend([positivo_liwc / len(token), negativo_liwc / len(token), positivo_emo / len(token), negativo_emo / len(token)])
+    test_liwc_emo_pn.append(vector_tmp)
+    test_liwc_emo_pn_norm.append(vector_norm)
+    
+    count_tmp = count_train_liwc_emolex.copy()
+    for i in token:
+        palabra = i.lower()
+        for categoria in dic_liwc:
+            dic_aux = dic_liwc[categoria]        
+            if (palabra in dic_aux):
+                valor = count_tmp[categoria]
+                valor = valor + dic_aux[palabra]
+                count_tmp[categoria] = valor
+
+    for i in token:
+        palabra = i.lower()
+        for categoria in dic_emolex:
+            dic_aux = dic_emolex[categoria]        
+            if (palabra in dic_aux):
+                valor = count_tmp[categoria]
+                valor = valor + dic_aux[palabra]
+                count_tmp[categoria] = valor      
+    vector=[]
+    vector_temp_norm = []
+    for key in count_tmp:
+        vector.append(count_tmp[key])
+        vector_temp_norm.append(count_tmp[key]/ len(token))
+    test_liwc_emolex.append(vector)
+    test_liwc_emolex_norm.append(vector_temp_norm)   
 
 # ------------------------------
 #     ENTRENAMIENTO
@@ -314,7 +408,7 @@ t2 = time.time()
 time_train = t1-t0
 time_predict = t2-t1
 print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
-print(mean_squared_error(test_labels, prediction))
+print('Result: {}'.format(mean_squared_error(test_labels, prediction)))
 
 print("OPCIÓN 2: LIWC completo")
 clasifier = svm.SVR()
@@ -326,7 +420,7 @@ t2 = time.time()
 time_train = t1-t0
 time_predict = t2-t1
 print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
-print(mean_squared_error(test_labels, prediction))
+print('Result: {}'.format(mean_squared_error(test_labels, prediction)))
 
 print("OPCIÓN 3: EMOLEX (positive y negative")
 clasifier = svm.SVR()
@@ -346,6 +440,30 @@ t0 = time.time()
 clasifier.fit(train_emolex_norm, train_labels)
 t1 = time.time()
 prediction = clasifier.predict(test_emolex)
+t2 = time.time()
+time_train = t1-t0
+time_predict = t2-t1
+print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
+print('Result: {}'.format(mean_squared_error(test_labels, prediction)))
+
+print("OPCIÓN 5: LIWC + EMOLEX (positivos y negativos)")
+clasifier = svm.SVR()
+t0 = time.time()
+clasifier.fit(train_liwc_emo_pn_norm, train_labels)
+t1 = time.time()
+prediction = clasifier.predict(test_liwc_emo_pn_norm)
+t2 = time.time()
+time_train = t1-t0
+time_predict = t2-t1
+print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
+print('Result: {}'.format(mean_squared_error(test_labels, prediction)))
+
+print("OPCIÓN 6: LIWC + EMOLEX (completo)")
+clasifier = svm.SVR()
+t0 = time.time()
+clasifier.fit(train_liwc_emo_norm, train_labels)
+t1 = time.time()
+prediction = clasifier.predict(test_liwc_emolex_norm)
 t2 = time.time()
 time_train = t1-t0
 time_predict = t2-t1
