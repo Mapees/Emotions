@@ -161,68 +161,112 @@ for line in test:
     test_liwc.append(vector)
     test_liwc_norm.append(vector_temp_norm)
 
-# # ------------------------------
-# #            EMOLEX
-# # ------------------------------
-# # Crear diccionarios para cada una de las categorias
-#
-# with open ('emolex.txt', 'r') as f:
-#     dic_emo_anger = {}
-#     dic_emo_anticipation = {}
-#     dic_emo_disgust = {}
-#     dic_emo_fear = {}
-#     dic_emo_joy = {}
-#     dic_emo_negative = {}
-#     dic_emo_positive = {}
-#     dic_emo_sadness = {}
-#     dic_emo_surprise = {}
-#     dic_emo_trust = {}
-#     for line in f:
-#         l = line.split()
-#         categoria = l[1]
-#         if (l[2] == "1"):
-#             if (categoria == "anger"):
-#                 dic_emo_anger[l[0]] = 1
-#             elif (categoria == "anticipation"):
-#                 dic_emo_anticipation[l[0]] = 1
-#             elif (categoria == "disgust"):
-#                 dic_emo_disgust[l[0]] = 1
-#             elif (categoria == "fear"):
-#                 dic_emo_fear[l[0]] = 1
-#             elif (categoria == "joy"):
-#                 dic_emo_joy[l[0]] = 1
-#             elif (categoria == "negative"):
-#                 dic_emo_negative[l[0]] = 1
-#             elif (categoria == "positive"):
-#                 dic_emo_positive[l[0]] = 1
-#             elif (categoria == "sadness"):
-#                 dic_emo_sadness[l[0]] = 1
-#             elif (categoria == "surprise"):
-#                 dic_emo_surprise[l[0]] = 1
-#             elif (categoria == "trust"):
-#                 dic_emo_trust[l[0]] = 1
-#
-#
-# # Tokenizar y obtener resultado de cada tweet
-# train_emolex = []          # vector sin normalizar
-# train_emolex_norm = []     # vector normalizado
-#
-# for line in train:
-#     token = tok.tokenize(line)
-#     positivo = 0
-#     negativo = 0
-#     vector_tmp = []
-#     vector_norm = []
-#     for i in token:
-#         if (i in dic_emo_positive):
-#             positivo = positivo + dic_emo_positive[i]
-#         elif (i in dic_emo_negative):
-#             negativo = negativo + dic_emo_negative[i]
-#     vector_tmp.extend([positivo, negativo])
-#     vector_norm.extend([positivo / len(token), negativo / len(token)])
-#     train_emolex.append(vector_tmp)
-#     train_emolex_norm.append(vector_norm)
-#
+# ------------------------------
+#            EMOLEX
+# ------------------------------
+# Crear diccionarios para cada una de las categorias
+
+dic_emolex = {}
+count_train_emolex = {}        # tiene el contador para todas las palabras
+
+with open ('emolex.txt', 'r') as f:
+    for line in f:
+        dic_aux = {}
+        l = line.split()
+        palabra = l[0]
+        categoria = l[1]
+        if l[2] == "1":
+            if categoria in dic_emolex:
+                dic_aux = dic_emolex[categoria]
+            dic_aux[palabra] = 1
+            dic_emolex[categoria] = dic_aux
+        if categoria not in count_train_emolex:
+            count_train_emolex[categoria] = 0
+
+# Tokenizar y obtener resultado de cada tweet
+train_emolex_pn = []          # vector sin normalizar
+train_emolex_pn_norm = []     # vector normalizado
+train_emolex = []
+train_emolex_norm = []
+
+for line in train:
+    token = tok.tokenize(line)
+    positivo = 0
+    negativo = 0
+    vector_tmp = []
+    vector_norm = []
+    dic_emo_positive = dic_emolex['positive']
+    dic_emo_negative = dic_emolex['negative']
+    for i in token:
+        if (i in dic_emo_positive):
+            positivo = positivo + dic_emo_positive[i]
+        elif (i in dic_emo_negative):
+            negativo = negativo + dic_emo_negative[i]
+    vector_tmp.extend([positivo, negativo])
+    vector_norm.extend([positivo / len(token), negativo / len(token)])
+    train_emolex_pn.append(vector_tmp)
+    train_emolex_pn_norm.append(vector_norm)
+    
+    count_tmp = count_train_emolex.copy()
+    for i in token:
+        palabra = i.lower()
+        for categoria in dic_emolex:
+            dic_aux = dic_emolex[categoria]        
+            if (palabra in dic_aux):
+                valor = count_tmp[categoria]
+                valor = valor + dic_aux[palabra]
+                count_tmp[categoria] = valor             
+            
+    vector=[]
+    vector_temp_norm = []
+    for key in count_tmp:
+        vector.append(count_tmp[key])
+        vector_temp_norm.append(count_tmp[key]/ len(token))
+    train_emolex.append(vector)
+    train_emolex_norm.append(vector_temp_norm)
+   
+test_emolex_pn = []
+test_emolex_pn_norm = []
+test_emolex = []
+test_emolex_norm = []
+
+for line in test:
+    token = tok.tokenize(line)
+    positivo = 0
+    negativo = 0
+    vector_tmp = []
+    vector_norm = []
+    for i in token:
+        positive = dic_emolex['positive']
+        negative = dic_emolex['negative']
+        if (i in positive):
+            positivo = positivo + positive[i]
+        elif (i in negative):
+            negativo = negativo + negative[i]
+    vector_tmp.extend([positivo, negativo])
+    vector_norm.extend([positivo / len(token), negativo / len(token)])
+    test_emolex_pn.append(vector_tmp)
+    test_emolex_pn_norm.append(vector_norm)
+    
+    count_tmp = count_train_emolex.copy()
+    for i in token:
+        palabra = i.lower()
+        for categoria in dic_emolex:
+            dic_aux = dic_emolex[categoria]        
+            if (palabra in dic_aux):
+                valor = count_tmp[categoria]
+                valor = valor + dic_aux[palabra]
+                count_tmp[categoria] = valor             
+            
+    vector=[]
+    vector_temp_norm = []
+    for key in count_tmp:
+        vector.append(count_tmp[key])
+        vector_temp_norm.append(count_tmp[key]/ len(token))
+    test_emolex.append(vector)
+    test_emolex_norm.append(vector_temp_norm)
+
+
 # # ------------------------------
 # #     LIWC    +       EMOLEX
 # # ------------------------------
@@ -283,3 +327,27 @@ time_train = t1-t0
 time_predict = t2-t1
 print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
 print(mean_squared_error(test_labels, prediction))
+
+print("OPCIÓN 3: EMOLEX (positive y negative")
+clasifier = svm.SVR()
+t0 = time.time()
+clasifier.fit(train_emolex_pn_norm, train_labels)
+t1 = time.time()
+prediction = clasifier.predict(test_emolex_pn)
+t2 = time.time()
+time_train = t1-t0
+time_predict = t2-t1
+print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
+print('Result: {}'.format(mean_squared_error(test_labels, prediction)))
+
+print("OPCIÓN 4: EMOLEX (completo)")
+clasifier = svm.SVR()
+t0 = time.time()
+clasifier.fit(train_emolex_norm, train_labels)
+t1 = time.time()
+prediction = clasifier.predict(test_emolex)
+t2 = time.time()
+time_train = t1-t0
+time_predict = t2-t1
+print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
+print('Result: {}'.format(mean_squared_error(test_labels, prediction)))
