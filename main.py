@@ -34,8 +34,8 @@ for line in data_train:
 
 # Leer el archivo de train, cada fila es un tweet que hay que tokenizar
 with open ('test.data', 'r') as f:
-    data_test = f.readlines()
-
+	data_test = f.readlines()
+ 
 test = []
 test_labels = []
 for line in data_test:
@@ -50,83 +50,116 @@ for line in data_test:
 # ------------------------------
 #            LIWC
 # ------------------------------
-
 # Leer categorias, palabras entre % y %
+categorias_liwc = {}
+dic_liwc = {}
+count_train_liwc = {}  # tiene la forma {categoria, contador}
+
+
 with open ('LIWC2007_English.dic', 'r') as f:
-	cont = False
-	dic_liwc = {}
-	for line in f:
-		if line.startswith('%'):
-			if cont == True:
-				cont = False
-			else:
-				cont = True
-		elif cont == True:
-			l = line.split()
-			dic_liwc[l[1]] = l[0]
-	f.seek(0);
-	cont = True
-	posemo_key = dic_liwc['posemo']
-	negemo_key = dic_liwc['negemo']
-	posemo = {}
-	negemo = {}
-	for line in f:
-		if line.startswith('%'):
-			if cont == True:
-				cont = False
-			else:
-				cont = True
-		elif cont == True:
-			l = line.split()
-			for i in l:
-				if (i == posemo_key):
-					posemo[l[0]] = 1
-				if (i == negemo_key):
-					negemo[l[0]] = 1
-
-
+    cont = False
+    for line in f:
+        if line.startswith('%'):
+            if cont == True:
+                cont = False
+            else:
+                cont = True
+        elif cont == True:
+            l = line.split()
+            categorias_liwc[l[0]] = l[1]
+            count_train_liwc[l[1]] = 0
+        else:
+            l = line.split()
+            for i in l[1:-1]:
+                dic_aux = {}
+                categoria = categorias_liwc[i]
+                if categoria in dic_liwc:
+                    dic_aux = dic_liwc[categoria]
+                dic_aux[l[0]] = 1
+                dic_liwc[categoria] = dic_aux
+                                
 #Tokenizar y obtener el resultado de cada tweet
-train_liwc=[]		# vector sin normalizar
-train_liwc_norm=[]	# vector normalizado
-#train_labels=[]
+train_liwc_pn = []            # vector sin normalizar (solo posemo y negemo)
+train_liwc_pn_norm = []       # vector normalizado (solo posemo y negemo)
+train_liwc = []                # vector completo
+train_liwc_norm = []
 
 for line in train:
-	token = tok.tokenize(line)
-	positivo = 0
-	negativo = 0
-	vector_tmp = []
-	vector_norm = []
-	for i in token:
-		if (i in posemo):
-			positivo = positivo + posemo[i]
-		elif (i in negemo):
-			negativo = negativo+ negemo[i]
-	vector_tmp.extend([positivo, negativo])
-	vector_norm.extend([positivo / len(token), negativo / len(token)])
-	train_liwc.append(vector_tmp)
-	train_liwc_norm.append(vector_norm)
-	#train_labels.append(token[:-1])
-
-test_liwc=[]
-test_liwc_norm=[]
-#test_labels=[]
+    token = tok.tokenize(line)
+    positivo = 0
+    negativo = 0
+    vector_tmp = []
+    vector_norm = []
+    for i in token:
+        posemo = dic_liwc['posemo']
+        negemo = dic_liwc['negemo']
+        if (i in posemo):
+            positivo = positivo + posemo[i]
+        elif (i in negemo):
+            negativo = negativo+ negemo[i]
+    vector_tmp.extend([positivo, negativo])
+    vector_norm.extend([positivo / len(token), negativo / len(token)])
+    train_liwc_pn.append(vector_tmp)
+    train_liwc_pn_norm.append(vector_norm)
+    
+    count_tmp = count_train_liwc.copy()
+    for i in token:
+        palabra = i.lower()
+        for categoria in dic_liwc:
+            dic_aux = dic_liwc[categoria]        
+            if (palabra in dic_aux):
+                valor = count_tmp[categoria]
+                valor = valor + dic_aux[palabra]
+                count_tmp[categoria] = valor             
+            
+    vector=[]
+    vector_temp_norm = []
+    for key in count_tmp:
+        vector.append(count_tmp[key])
+        vector_temp_norm.append(count_tmp[key]/ len(token))
+    train_liwc.append(vector)
+    train_liwc_norm.append(vector_temp_norm)
+   
+test_liwc_pn = []
+test_liwc_pn_norm = []
+test_liwc = []
+test_liwc_norm = []
 
 for line in test:
-	token = tok.tokenize(line)
-	positivo = 0
-	negativo = 0
-	vector_tmp = []
-	vector_norm = []
-	for i in token:
-		if (i in posemo):
-			positivo = positivo + posemo[i]
-		elif (i in negemo):
-			negativo = negativo + negemo[i]
-	vector_tmp.extend([positivo, negativo])
-	vector_norm.extend([positivo / len(token), negativo / len(token)])
-	test_liwc.append(vector_tmp)
-	test_liwc_norm.append(vector_norm)
-	#test_labels.append(line)
+    token = tok.tokenize(line)
+    positivo = 0
+    negativo = 0
+    vector_tmp = []
+    vector_norm = []
+    for i in token:
+        posemo = dic_liwc['posemo']
+        negemo = dic_liwc['negemo']
+        if (i in posemo):
+            positivo = positivo + posemo[i]
+        elif (i in negemo):
+            negativo = negativo + negemo[i]
+    vector_tmp.extend([positivo, negativo])
+    vector_norm.extend([positivo / len(token), negativo / len(token)])
+    test_liwc_pn.append(vector_tmp)
+    test_liwc_pn_norm.append(vector_norm)
+    
+    count_tmp = count_train_liwc.copy()
+    for i in token:
+        palabra = i.lower()
+        for categoria in dic_liwc:
+            dic_aux = dic_liwc[categoria]        
+            if (palabra in dic_aux):
+                valor = count_tmp[categoria]
+                valor = valor + dic_aux[palabra]
+                count_tmp[categoria] = valor             
+            
+    vector=[]
+    vector_temp_norm = []
+    for key in count_tmp:
+        vector.append(count_tmp[key])
+        vector_temp_norm.append(count_tmp[key]/ len(token))
+    test_liwc.append(vector)
+    test_liwc_norm.append(vector_temp_norm)
 
 # # ------------------------------
 # #            EMOLEX
@@ -224,45 +257,22 @@ for line in test:
 #     train_liwc_emo_norm.append(vector_norm)
 #
 
-
 # ------------------------------
 #     ENTRENAMIENTO
 # ------------------------------
-# # Perform classification with SVM, kernel=rbf
-# classifier_rbf = svm.SVC()
-# t0 = time.time()
-# classifier_rbf.fit(train_liwc_norm, train_labels)
-# t1 = time.time()
-# prediction_rbf = classifier_rbf.predict(test_liwc_norm)
-# t2 = time.time()
-# time_rbf_train = t1-t0
-# time_rbf_predict = t2-t1
-#
-# # Perform classification with SVM, kernel=linear
-# classifier_linear = svm.SVC(kernel='linear')
-# t0 = time.time()
-# classifier_linear.fit(train_liwc_norm, train_labels)
-# t1 = time.time()
-# prediction_linear = classifier_linear.predict(test_liwc_norm)
-# t2 = time.time()
-# time_linear_train = t1-t0
-# time_linear_predict = t2-t1
+print("OPCIÓN 1: LIWC (posemo y negemo)")
+clasifier = svm.SVR()
+t0 = time.time()
+clasifier.fit(train_liwc_pn_norm, train_labels)
+t1 = time.time()
+prediction = clasifier.predict(test_liwc_pn_norm)
+t2 = time.time()
+time_train = t1-t0
+time_predict = t2-t1
+print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
+print(mean_squared_error(test_labels, prediction))
 
-#print(train_liwc_norm)
-#print(train_labels)
-#print(test_labels)
-
-# Perform classification with SVM, kernel=linear
-#classifier_liblinear = svm.LinearSVC()
-# t0 = time.time()
-# classifier_liblinear.fit(train_liwc_norm, train_labels)
-# t1 = time.time()
-# prediction_liblinear = classifier_liblinear.predict(test_liwc_norm)
-# t2 = time.time()
-# time_liblinear_train = t1-t0
-# time_liblinear_predict = t2-t1
-
-
+print("OPCIÓN 2: LIWC completo")
 clasifier = svm.SVR()
 t0 = time.time()
 clasifier.fit(train_liwc_norm, train_labels)
@@ -271,16 +281,5 @@ prediction = clasifier.predict(test_liwc_norm)
 t2 = time.time()
 time_train = t1-t0
 time_predict = t2-t1
-print('{} - {}'.format(time_train, time_predict))
+print('Time train: {} - Time predict: {}'.format(time_train, time_predict))
 print(mean_squared_error(test_labels, prediction))
-
-# Mostrar resultados y tiempos
-# print("Results for SVC(kernel=rbf)")
-# print("Training time: %fs; Prediction time: %fs" % (time_rbf_train, time_rbf_predict))
-# print(classification_report(test_labels, prediction_rbf))
-# print("Results for SVC(kernel=linear)")
-# print("Training time: %fs; Prediction time: %fs" % (time_linear_train, time_linear_predict))
-# print(classification_report(test_labels, prediction_linear))
-# print("Results for LinearSVC()")
-# print("Training time: %fs; Prediction time: %fs" % (time_liblinear_train, time_liblinear_predict))
-# print(classification_report(test_labels, prediction_liblinear))
